@@ -35,6 +35,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ### Suggested Keybindings
 
+
 ```lua
 vim.keymap.set("n", "<leader>mt", ":M2Toggle<CR>", { desc = "Toggle M2 REPL" })
 vim.keymap.set("n", "<leader>ms", ":M2SendLine<CR>", { desc = "Send line to M2" })
