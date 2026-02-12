@@ -1,0 +1,8 @@
+# Neovim
+.netrwhist
+undo/
+*.swp
+*.swo
+
+# Temporary files
+temp_ts_m2/
