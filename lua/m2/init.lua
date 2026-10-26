@@ -1,42 +1,45 @@
 local M = {}
 
 ---@class M2Opts
----@field repl_cmd? string
----@field repl_split? "vsplit" | "split" | "tabnew"
+---@field install? boolean Install missing dependencies automatically (default true).
+---@field parser? boolean Install the released parser and queries (default true).
+---@field lsp? boolean|vim.lsp.Config Enable m2-ls; a table overrides its configuration.
+---@field term? boolean|M2TermOpts Enable the terminal helper; a table overrides its options.
 
----Default options
-local default_opts = {
-  repl_cmd = "M2",
-  repl_split = "vsplit",
-}
+local options
+local setup_pending = false
 
----@type M2Opts
-M.opts = {}
-
+---@param opts? M2Opts
 function M.setup(opts)
-  M.opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+  options = vim.tbl_deep_extend("force", {
+    install = true,
+    parser = true,
+    lsp = true,
+    term = true,
+  }, opts or {})
+  M._configured = true
 
-  -- Register tree-sitter parser
-  require("m2.treesitter").setup()
+  vim.filetype.add({ extension = { m2 = "macaulay2" } })
+  if options.parser then
+    require("m2.install").load_parser()
+  end
+  require("m2.highlight").setup()
+  if options.term then
+    require("m2_term").setup(type(options.term) == "table" and options.term or {})
+  end
 
-  -- Register commands
-  vim.api.nvim_create_user_command("M2Toggle", function()
-    require("m2.repl").toggle({
-      cmd = M.opts.repl_cmd,
-      split = M.opts.repl_split,
-    })
-  end, { desc = "Toggle Macaulay2 REPL" })
+  vim.api.nvim_create_user_command("M2Install", function()
+    require("m2.install").setup(vim.tbl_extend("force", options, { install = true }))
+  end, { desc = "Install the Macaulay2 parser and language server", force = true })
 
-  vim.api.nvim_create_user_command("M2SendLine", function()
-    require("m2.repl").send_line()
-  end, { desc = "Send current line to Macaulay2 REPL" })
-
-  vim.api.nvim_create_user_command("M2SendSelection", function()
-    require("m2.repl").send_selection()
-  end, { desc = "Send selection to Macaulay2 REPL", range = true })
-
-  -- Default keymaps (optional, maybe leave to user?)
-  -- For now, just provide the commands.
+  -- Use the final options after startup plugin and user configuration have run.
+  if not setup_pending then
+    setup_pending = true
+    vim.schedule(function()
+      setup_pending = false
+      require("m2.install").setup(options)
+    end)
+  end
 end
 
 return M

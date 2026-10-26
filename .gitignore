@@ -6,3 +6,14 @@ undo/
 
 # Temporary files
 temp_ts_m2/
+.clodex/
+
+# Local configuration and notes
+AGENTS.md
+M2_LANGUAGE.md
+.agents/
+.aws/
+.claude/
+.codex/
+*.local.*
+nvim.log
