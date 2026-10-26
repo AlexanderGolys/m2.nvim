@@ -9,6 +9,26 @@ local executable_suffix = vim.fn.has("win32") == 1 and ".exe" or ""
 local server_path = cargo_directory .. "/bin/m2-ls" .. executable_suffix
 local running = {}
 local options = {}
+local server_configured = false
+
+local function has_external_server()
+  for _, name in ipairs({ "m2-ls", "m2_ls" }) do
+    if (name ~= "m2_ls" or not server_configured) and vim.lsp.config[name] then
+      return true
+    end
+  end
+  for _, client in ipairs(vim.lsp.get_clients()) do
+    if client.name ~= "m2_ls" or not server_configured then
+      local command = client.config.cmd
+      if client.name == "m2-ls" or client.name == "m2_ls"
+        or (type(command) == "table" and type(command[1]) == "string"
+          and vim.fs.basename(command[1]):gsub("%.exe$", "") == "m2-ls") then
+        return true
+      end
+    end
+  end
+  return false
+end
 
 ---@param message string
 local function report_error(message)
@@ -33,9 +53,11 @@ local function run(command, callback)
 end
 
 local function enable_server()
-  if not options.lsp then
-    vim.lsp.enable("m2_ls", false)
-    return
+  if not options.lsp or has_external_server() then
+    if server_configured then
+      vim.lsp.enable("m2_ls", false)
+    end
+    return false
   end
   local config = type(options.lsp) == "table" and options.lsp or {}
   local executable = vim.fn.executable(server_path) == 1 and server_path or "m2-ls"
@@ -46,9 +68,11 @@ local function enable_server()
     settings = { ["m2-ls"] = {} },
   }, config)
   vim.lsp.config("m2_ls", config)
+  server_configured = true
   if type(config.cmd) == "function" or vim.fn.executable(config.cmd[1]) == 1 then
     vim.lsp.enable("m2_ls")
   end
+  return true
 end
 
 local function start_highlighting()
@@ -126,8 +150,7 @@ local function install_parser()
 end
 
 local function install_server()
-  enable_server()
-  if not options.lsp or not options.install or running.server then
+  if not enable_server() or not options.install or running.server then
     return
   end
   local config = type(options.lsp) == "table" and options.lsp or {}

@@ -40,7 +40,9 @@ Errors are shown in `:messages`. A pre-existing m2-ls is reused without updates;
 update it with the same tool that installed it.
 
 The plugin manages its parser and queries directly; `nvim-treesitter` is not
-required. Disable any separate `m2_ls` setup to avoid starting duplicate clients.
+required. If `m2-ls` or `m2_ls` is already configured, or an m2-ls client is
+already running, the plugin leaves that server's setup and installation to
+your existing configuration. It does not add a second client.
 
 ## Configuration
 
@@ -63,7 +65,9 @@ require("m2").setup({
 `lsp` defaults to `true`; a table accepts Neovim LSP configuration overrides,
 including `cmd`, `capabilities`, `on_attach`, and `settings`. A custom `cmd`
 skips Cargo installation. Set `lsp = false` to disable the server, or
-`parser = false` to manage the parser yourself. `install = false` suppresses
+`parser = false` to manage the parser yourself. Disabling `lsp` only disables
+the server managed by this plugin; existing configurations are left alone.
+`install = false` suppresses
 automatic downloads while using installed dependencies; `:M2Install` explicitly
 installs missing enabled dependencies. The former local-checkout `parser`
 option has been replaced by this boolean option.
